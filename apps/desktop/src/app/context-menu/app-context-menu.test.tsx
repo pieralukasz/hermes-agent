@@ -7,6 +7,7 @@ import { DirectiveContent } from '@/components/assistant-ui/directive-text'
 import { ContextMenu, ContextMenuTrigger, HERMES_CONTEXT_MENU_TRIGGER_ATTR } from '@/components/ui/context-menu'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { $previewTabs, closeRightRail } from '@/store/preview'
+import { $selectionDraftRequest } from '@/store/selection-draft'
 import { $connection } from '@/store/session'
 
 import { AppContextMenu } from './app-context-menu'
@@ -590,6 +591,79 @@ describe('AppContextMenu guest (in-app browser)', () => {
 
     expect(guest.replaceMisspelling).toHaveBeenCalledWith('the')
     expect(screen.queryByText('Add to dictionary')).toBeNull()
+  })
+})
+
+describe('transcript selection → new chat', () => {
+  // A chat pane sits inside the tab/zone radix trigger (Reload / Close tabs).
+  const TRANSCRIPT = `
+    <div data-zone-body="chat" data-slot="context-menu-trigger">
+      <section data-chat-surface="" data-session-anchor="session-tile:sess-9">
+        <div data-role="user" id="user"><p id="u">question text</p></div>
+        <div data-role="assistant" id="assistant"><p id="a">answer <em>text</em> here</p><div id="pad">padding</div></div>
+      </section>
+    </div>`
+
+  function select(startId: string, endId: string) {
+    const range = document.createRange()
+
+    range.setStart(document.getElementById(startId)!, 0)
+    range.setEnd(document.getElementById(endId)!, document.getElementById(endId)!.childNodes.length)
+    window.getSelection()!.removeAllRanges()
+    window.getSelection()!.addRange(range)
+  }
+
+  afterEach(() => {
+    $selectionDraftRequest.set(null)
+    window.getSelection()?.removeAllRanges()
+  })
+
+  it('offers "New chat with selection" on selected message text and files the quote', async () => {
+    installBridge()
+    mountMenu()
+    attach(TRANSCRIPT)
+    select('a', 'a')
+
+    fireEvent.contextMenu(document.getElementById('a')!)
+
+    expect(await screen.findByText('Copy')).toBeTruthy()
+    fireEvent.click(await screen.findByText('New chat with selection'))
+
+    expect($selectionDraftRequest.get()?.text).toBe(
+      '> answer *text* here\n\n' +
+        'Source: assistant message in the Hermes conversation “Untitled conversation” — hermes://open/sess-9\n\n'
+    )
+  })
+
+  it('answers for the selection when the press beside it collapsed it, instead of the tab menu', async () => {
+    installBridge()
+    mountMenu()
+    attach(TRANSCRIPT)
+    select('a', 'a')
+
+    const pad = document.getElementById('pad')!
+
+    fireEvent.pointerDown(pad, { button: 2 })
+    // What Chromium does on a right-press beside the highlight.
+    window.getSelection()!.collapse(pad, 0)
+    fireEvent.contextMenu(pad)
+
+    expect(await screen.findByText('New chat with selection')).toBeTruthy()
+    expect(screen.queryByText('Settings')).toBeNull()
+    fireEvent.click(screen.getByText('New chat with selection'))
+    expect($selectionDraftRequest.get()?.text).toMatch(/^> answer \*text\* here\n/)
+  })
+
+  it('keeps a selection spanning two messages to plain Copy', async () => {
+    installBridge()
+    mountMenu()
+    attach(TRANSCRIPT)
+    select('u', 'a')
+
+    fireEvent.contextMenu(document.getElementById('a')!)
+
+    expect(await screen.findByText('Copy')).toBeTruthy()
+    expect(screen.queryByText('New chat with selection')).toBeNull()
   })
 })
 

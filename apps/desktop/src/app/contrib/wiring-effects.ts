@@ -7,6 +7,7 @@ import { $freshSessionRequest, refreshActiveProfile } from '@/store/profile'
 import { resetProjectTreeState } from '../right-sidebar/files/use-project-tree'
 import { SETTINGS_ROUTE } from '../routes'
 
+import { useSelectionDraftRequests } from './hooks/use-selection-draft-bridge'
 import { $restartPreviewServer } from './panes'
 
 type RestartPreviewServer = NonNullable<ReturnType<typeof $restartPreviewServer.get>>
@@ -53,8 +54,10 @@ export function usePublishRestartPreviewServer(restartPreviewServer: RestartPrev
 
 // A profile switch/create drops to a fresh new-session draft so the
 // previously open session doesn't bleed across contexts. Skip initial value.
-export function useFreshSessionRequest(startFreshSessionDraft: () => void) {
+/** Also consumes "new chat from selected text" requests: same fresh-draft door, seeded with a quote. */
+export function useFreshSessionRequest(startFreshSessionDraft: (options?: { rotateFreshDraftKey: false }) => void) {
   const freshSessionRequest = useStore($freshSessionRequest)
+  useSelectionDraftRequests(startFreshSessionDraft)
   const lastFreshRef = useRef(freshSessionRequest)
 
   // eslint-disable-next-line no-restricted-syntax -- legitimate non-atom ref write (see eslint rule comment)

@@ -11,9 +11,12 @@ import { zhHantCommon } from './zh-hant_common'
 import { zhHantConnectors } from './zh-hant_connectors'
 import { zhHantDiagnostics } from './zh-hant_diagnostics'
 import { zhHantFirstRun } from './zh-hant_first_run'
+import { zhHantSelectionDraft } from './zh-hant_selection_draft'
 import { zhHantSettings } from './zh-hant_settings'
 
 export const zhHantOverrides = {
+  selectionDraft: zhHantSelectionDraft,
+  keybinds: { actions: { 'session.newFromSelection': '以選取的文字開始新對話' } },
 
   catalog: {
     add: '新增',

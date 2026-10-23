@@ -1,3 +1,5 @@
+import { resolveTranscriptSelection, type TranscriptSelection } from '@/app/selection-draft/transcript-selection'
+
 /**
  * What a right-click landed on, resolved from the DOM.
  *
@@ -21,6 +23,9 @@ export interface ContextMenuDomTarget {
   onImage: boolean
   /** The live selection's text at the moment of the click. */
   selectionText: string
+  /** The same selection judged as transcript text: inside one user or
+   *  assistant message, or refused with the reason. */
+  transcriptSelection: TranscriptSelection
 }
 
 /** Form fields and `contenteditable` hosts. Mirrors the keybind helper, but
@@ -52,7 +57,8 @@ export function resolveDomTarget(element: Element | null): ContextMenuDomTarget 
     linkUrl: linkUrl === '#' ? '' : linkUrl,
     imageUrl: image instanceof HTMLImageElement ? image.currentSrc || image.src : '',
     onImage: Boolean(image),
-    selectionText: window.getSelection()?.toString().trim() ?? ''
+    selectionText: window.getSelection()?.toString().trim() ?? '',
+    transcriptSelection: resolveTranscriptSelection()
   }
 }
 

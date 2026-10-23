@@ -15,11 +15,13 @@ import { zhNotices } from './zh_notices'
 import { zhNotifications } from './zh_notifications'
 import { zhOnboarding } from './zh_onboarding'
 import { zhProjects } from './zh_projects'
+import { zhSelectionDraft } from './zh_selection_draft'
 import { zhSharedMetrics } from './zh_shared_metrics'
 import { zhThemePicker } from './zh_theme_picker'
 import { zhUpdateChannel } from './zh_update_channel'
 
 export const zhOverrides = {
+  selectionDraft: zhSelectionDraft,
   catalog: zhCatalog,
   externalOpenFailed: {
     title: '无法打开此链接',
@@ -351,6 +353,7 @@ export const zhOverrides = {
       'session.new': '新建会话',
       'session.newTab': '新建会话标签',
       'session.newWindow': '新建窗口',
+      'session.newFromSelection': '从所选文本新建聊天',
       'session.next': '下一个会话',
       'session.prev': '上一个会话',
       'session.slot.1': '切换到最近会话 1',

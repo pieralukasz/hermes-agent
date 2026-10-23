@@ -23,6 +23,10 @@ const launchFlags: { localModels?: boolean; assumeFreshInstall?: boolean } | und
 // the built-in palette over the skin configured on this machine.
 const localSkin = ipcRenderer.sendSync('hermes:skin:local')
 
+// This build's deep-link scheme (`hermes`, or `hermes-dev` for a dev server):
+// the renderer writes it into links back to a conversation.
+const deepLinkProtocol = ipcRenderer.sendSync('hermes:deep-link-protocol')
+
 import { unwrapExpectedNotFound } from './api-expected-404'
 
 contextBridge.exposeInMainWorld('hermesDesktop', {
@@ -558,6 +562,20 @@ contextBridge.exposeInMainWorld('hermesDesktop', {
     return () => ipcRenderer.removeListener('hermes:deep-link', listener)
   },
   signalDeepLinkReady: () => ipcRenderer.invoke('hermes:deep-link-ready'),
+  deepLinkProtocol: typeof deepLinkProtocol === 'string' ? deepLinkProtocol : 'hermes',
+  // macOS Services "New Hermes chat from selection": Settings installs/removes
+  // the Service; main relays each validated hand-off as an unsent draft.
+  selectionService: {
+    status: () => ipcRenderer.invoke('hermes:selection-service:status'),
+    install: options => ipcRenderer.invoke('hermes:selection-service:install', options),
+    uninstall: () => ipcRenderer.invoke('hermes:selection-service:uninstall'),
+    onDraft: callback => {
+      const listener = (_event, payload) => callback(payload)
+      ipcRenderer.on('hermes:selection-draft', listener)
+
+      return () => ipcRenderer.removeListener('hermes:selection-draft', listener)
+    }
+  },
   probePluginRepo: payload => ipcRenderer.invoke('hermes:plugin:probe', payload),
   installDesktopPlugin: payload => ipcRenderer.invoke('hermes:plugin:installDesktop', payload),
   removeDesktopPlugin: payload => ipcRenderer.invoke('hermes:plugin:removeDesktop', payload),

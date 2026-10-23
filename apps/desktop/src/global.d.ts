@@ -8,10 +8,12 @@ import type { HudModifierApi } from '../electron/hud-modifier-types'
 import type { MachineProfile } from '../electron/machine-profile'
 import type { HermesNotification } from '../electron/notification-types'
 import type { KeepAwakeMode } from '../electron/power-save'
+import type { SelectionServiceStatus } from '../electron/selection-service-types'
 import type { UpdateHoldWire } from '../electron/update-hold-types'
 import type { UpdateRunReport } from '../electron/updater/update-metrics'
 import type { WindowSizeMode } from '../electron/window-size-types'
 
+import type { NativeSelectionDraftPayload } from './app/selection-draft/actions'
 import type { WakeIndicatorState } from './lib/wake-indicator'
 import type {
   PetOverlayBounds,
@@ -590,6 +592,15 @@ declare global {
         callback: (payload: { kind: string; name: string; params: Record<string, string> }) => void
       ) => () => void
       signalDeepLinkReady?: () => Promise<{ ok: boolean }>
+      // This build's deep-link scheme (`hermes` / `hermes-dev`).
+      deepLinkProtocol?: string
+      // macOS Services "New Hermes chat from selection" (electron/selection-service.ts).
+      selectionService?: {
+        status: () => Promise<SelectionServiceStatus>
+        install: (options: { includeContext: boolean }) => Promise<SelectionServiceStatus>
+        uninstall: () => Promise<SelectionServiceStatus>
+        onDraft: (callback: (payload: NativeSelectionDraftPayload) => void) => () => void
+      }
       probePluginRepo?: (payload: { identifier?: string; repo?: string }) => Promise<{
         ok: boolean
         agent: boolean

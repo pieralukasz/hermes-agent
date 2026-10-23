@@ -17,11 +17,14 @@ import { jaNotifications } from './ja_notifications'
 import { jaOnboarding } from './ja_onboarding'
 import { jaPluginSettings } from './ja_plugins'
 import { jaProjects } from './ja_projects'
+import { jaSelectionDraft } from './ja_selection_draft'
 import { jaSharedMetrics } from './ja_shared_metrics'
 import { jaThemePicker } from './ja_theme_picker'
 import { jaUpdateChannel } from './ja_update_channel'
 
 export const jaOverrides = {
+  selectionDraft: jaSelectionDraft,
+  keybinds: { actions: { 'session.newFromSelection': '選択したテキストから新しいチャット' } },
   catalog: jaCatalog,
   connectors: jaConnectors.connectors,
   externalOpenFailed: {

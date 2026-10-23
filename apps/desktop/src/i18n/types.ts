@@ -9,6 +9,7 @@
 import type { ErrorCodeKey } from '@/lib/error-surface'
 import type { TipId } from '@/lib/tips/catalog'
 
+import type { enSelectionDraft } from './en_selection_draft'
 import type { AppTourTranslations } from './types_app_tour'
 import type { BillingTranslations } from './types_billing'
 import type { BootTranslations } from './types_boot'
@@ -3868,6 +3869,9 @@ catalog: CatalogTranslations
     zoneCount: (count: number) => string
     tabCount: (count: number) => string
   }
+
+  /** "New chat from selection": transcript menu item, draft copy, macOS Service settings (en_selection_draft.ts). */
+  selectionDraft: typeof enSelectionDraft
 
   contextMenu: {
     link: {

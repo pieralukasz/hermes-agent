@@ -121,6 +121,11 @@ export const KEYBIND_ACTIONS: readonly KeybindActionMeta[] = [
   { id: 'session.new', category: 'session', defaults: ['mod+n'] },
   { id: 'session.newTab', category: 'session', defaults: ['mod+t'] },
   { id: 'session.newWindow', category: 'session', defaults: ['mod+shift+n'] },
+  // ⌘⇧E — "new chat, with this": quote the transcript selection (one user or
+  // assistant message) into a fresh unsent draft. The keyboard twin of the
+  // selection context-menu item; refuses with a toast when nothing is selected.
+  // Not ⌘⌥N: ⌘⌥<letter> is the plugin namespace (Kanban's new task owns ⌘⌥N).
+  { id: 'session.newFromSelection', category: 'session', defaults: ['mod+shift+e'] },
   // ⌃Tab / ⌃⇧Tab — the universal tab-cycle chord. Literally Control, not Cmd
   // (macOS reserves Cmd+Tab for app switching); see `ctrl` in combo.ts.
   { id: 'session.next', category: 'session', defaults: ['ctrl+tab', 'ctrl+pagedown'] },

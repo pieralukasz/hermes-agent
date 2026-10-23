@@ -16,12 +16,14 @@ import { frNotifications } from './fr_notifications'
 import { frOnboarding } from './fr_onboarding'
 import { frPluginUpdate } from './fr_plugin_update'
 import { frProjects } from './fr_projects'
+import { frSelectionDraft } from './fr_selection_draft'
 import { frSharedMetrics } from './fr_shared_metrics'
 import { frThemePicker } from './fr_theme_picker'
 import { frUpdateChannel } from './fr_update_channel'
 import { introFr } from './intro-fr'
 
 export const frOverrides = {
+  selectionDraft: frSelectionDraft,
   sharedMetrics: frSharedMetrics,
   firstRun: frFirstRun,
   intro: introFr,
@@ -570,6 +572,7 @@ export const frOverrides = {
       'session.new': 'Nouvelle session',
       'session.newTab': 'Nouvel onglet de session',
       'session.newWindow': 'Nouvelle fenêtre',
+      'session.newFromSelection': 'Nouveau chat à partir du texte sélectionné',
       'session.next': 'Session suivante',
       'session.prev': 'Session précédente',
       'session.slot.1': 'Basculer vers la session récente 1',

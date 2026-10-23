@@ -215,7 +215,11 @@ import { liveWindowState, overlayWindowState } from './connection-window-state'
 import { describeCrashReason, installCrashForensics } from './crash-forensics'
 import { adoptServedDashboardToken } from './dashboard-token'
 import { resolveDesktopHermesHome, resolveDesktopUserData } from './data-paths'
-import { registerDeepLinkProtocol as registerDeepLinkProtocolWith } from './deep-link-protocol'
+import {
+  extractDeepLink,
+  parseDeepLink,
+  registerDeepLinkProtocol as registerDeepLinkProtocolWith
+} from './deep-link-protocol'
 import { loadOrCreateInstallationId, sshOwnershipId } from './desktop-installation'
 import { formatDesktopLogLine, formatLogStamp } from './desktop-log-line'
 import {
@@ -549,6 +553,7 @@ import {
 } from './secret-storage-policy'
 import { selectPathsDialogProperties } from './select-paths-dialog'
 import { selectRunnableBinary } from './select-runnable-binary'
+import { installSelectionServiceBridge } from './selection-service'
 import {
   buildInstanceWindowUrl,
   buildSessionWindowUrl,
@@ -17686,45 +17691,29 @@ let _rendererReadyForDeepLink = false
 // Set by sendOpenUpdatesRequested() when the renderer cannot hear it yet.
 let _pendingOpenUpdates = false
 
-function _extractDeepLink(argv) {
-  if (!Array.isArray(argv)) {
-    return null
-  }
+const _extractDeepLink = argv => extractDeepLink(argv, DEEPLINK_SCHEMES)
 
-  return argv.find(a => typeof a === 'string' && DEEPLINK_SCHEMES.some(s => a.startsWith(`${s}://`))) || null
-}
+// <scheme>://selection/new?id=… from the macOS Service (selection-service.ts): main reads and
+// deletes the hand-off file, the renderer opens the validated text as an UNSENT new-chat draft.
+const selectionDraftRelay = installSelectionServiceBridge({
+  appId: IDENTITY_APP_NAME ? PRODUCT_IDENTITY.appId : 'com.nousresearch.hermes', displayName: APP_NAME,
+  getPath: name => app.getPath(name), ipc: ipcMain, log: rememberLog, protocol: HERMES_PROTOCOL,
+  isReady: () => _rendererReadyForDeepLink && Boolean(mainWindow && !mainWindow.isDestroyed()),
+  send: payload => (activateWindow(mainWindow), mainWindow.webContents.send('hermes:selection-draft', payload))
+})
 
 function handleDeepLink(url) {
   if (!url || typeof url !== 'string') {
     return
   }
 
-  let parsed
+  const payload = parseDeepLink(url, DEEPLINK_SCHEMES, rememberLog)
 
-  try {
-    parsed = new URL(url)
-  } catch {
-    rememberLog(`[deeplink] ignoring malformed url: ${url}`)
-
+  if (!payload) {
     return
   }
 
-  const scheme = parsed.protocol.replace(/:$/, '')
-
-  if (!DEEPLINK_SCHEMES.includes(scheme)) {
-    rememberLog(`[deeplink] ignoring scheme ${scheme} (expected ${DEEPLINK_SCHEMES.join(' or ')})`)
-
-    return
-  }
-
-  // hermes://blueprint/<key>?slot=val  -> host="blueprint", path="/<key>"
-  const kind = parsed.hostname || ''
-  const name = decodeURIComponent((parsed.pathname || '').replace(/^\//, ''))
-  const params = {}
-  parsed.searchParams.forEach((v, k) => {
-    params[k] = v
-  })
-  const payload = { kind, name, params }
+  const { kind, name, params } = payload
 
   // Route the Windows Copilot hardware key (registered by the MSIX
   // copilotkeyprovider fragment). quick-entry is the eventual summon; for
@@ -17736,6 +17725,10 @@ function handleDeepLink(url) {
     rememberLog(`[deeplink] ignoring copilot-key path: ${name}`)
 
     return
+  }
+
+  if (kind === 'selection') {
+    return selectionDraftRelay.handleDeepLink(name, params)
   }
 
   // hermes://close-preview — the out-of-band exit hatch for a preview pane
@@ -17788,6 +17781,7 @@ function handleDeepLink(url) {
 // a link that arrived during boot/install is flushed exactly once.
 ipcMain.handle('hermes:deep-link-ready', () => {
   _rendererReadyForDeepLink = true
+  selectionDraftRelay.flush()
 
   if (_pendingOpenUpdates) {
     _pendingOpenUpdates = false

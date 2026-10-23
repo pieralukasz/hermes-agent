@@ -22,6 +22,7 @@ import { enNotifications } from './en_notifications'
 import { enOnboarding } from './en_onboarding'
 import { enPluginUpdate } from './en_plugin_update'
 import { enProjects } from './en_projects'
+import { enSelectionDraft } from './en_selection_draft'
 import { enSharedMetrics } from './en_shared_metrics'
 import { enThemePicker } from './en_theme_picker'
 import { enUninstallSection } from './en_uninstall_section'
@@ -33,6 +34,7 @@ export const en: Translations = {
   sharedMetrics: enSharedMetrics,
   appTour: enAppTour,
   firstRun: enFirstRun,
+  selectionDraft: enSelectionDraft,
   // English editorial copy stays in the shipped JSONL; other locales override it.
   intro: { stock: {}, custom: () => [] },
   connectors: enConnectorCard,
@@ -567,6 +569,7 @@ export const en: Translations = {
       'session.new': 'New session',
       'session.newTab': 'New session tab',
       'session.newWindow': 'New window',
+      'session.newFromSelection': 'New chat from selected text',
       'session.next': 'Next session',
       'session.prev': 'Previous session',
       'session.slot.1': 'Switch to recent session 1',

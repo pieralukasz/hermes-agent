@@ -15,6 +15,7 @@ import { ruNotifications } from './ru_notifications'
 import { ruOnboarding } from './ru_onboarding'
 import { ruPluginSettings } from './ru_plugins'
 import { ruProjects } from './ru_projects'
+import { ruSelectionDraft } from './ru_selection_draft'
 import { ruSharedMetrics } from './ru_shared_metrics'
 import { ruThemePicker } from './ru_theme_picker'
 import { ruUpdateChannel } from './ru_update_channel'
@@ -41,6 +42,7 @@ const RU_NOUN = (count: number | string, one: string, few: string, many: string)
 }
 
 export const ruOverrides = {
+  selectionDraft: ruSelectionDraft,
   catalog: ruCatalog,
   connectors: ruConnectors.connectors,
   sharedMetrics: ruSharedMetrics,
@@ -247,6 +249,7 @@ export const ruOverrides = {
       'session.new': 'Новый сеанс',
       'session.newTab': 'Новая вкладка сеанса',
       'session.newWindow': 'Новое окно',
+      'session.newFromSelection': 'Новый чат из выделенного текста',
       'session.next': 'Следующий сеанс',
       'session.prev': 'Предыдущий сеанс',
       'session.slot.1': 'Переключить на недавний сеанс 1',

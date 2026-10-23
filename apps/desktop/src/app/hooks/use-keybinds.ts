@@ -7,6 +7,7 @@ import { setTerminalTakeover } from '@/app/right-sidebar/store'
 import { toggleTerminalPane } from '@/app/right-sidebar/terminal/reveal-focus'
 import { closeActiveTerminal, createTerminal, cycleTerminal } from '@/app/right-sidebar/terminal/terminals'
 import { appViewForPath, isOverlayView } from '@/app/routes'
+import { openTranscriptSelectionInNewDraft } from '@/app/selection-draft/actions'
 import {
   activateTreeTabSlot,
   cycleTreeTabInFocusedZone,
@@ -319,6 +320,7 @@ export function useKeybinds(deps: KeybindRuntimeDeps): void {
     },
     'session.newTab': () => deps.openNewSessionTab(),
     'session.newWindow': () => void openNewWindow(),
+    'session.newFromSelection': () => void openTranscriptSelectionInNewDraft(),
     'session.next': () => cycleTab(1),
     'session.prev': () => cycleTab(-1),
     ...sessionSlotHandlers,

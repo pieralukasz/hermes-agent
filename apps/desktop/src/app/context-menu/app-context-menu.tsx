@@ -3,6 +3,12 @@ import type { ReactNode } from 'react'
 import { useEffect } from 'react'
 
 import { terminalMenuHandleFor } from '@/app/right-sidebar/terminal/terminal-context-menu'
+import { openTranscriptSelectionInNewDraft } from '@/app/selection-draft/actions'
+import {
+  restoreSnapshotForClick,
+  type SelectionSnapshot,
+  snapshotTranscriptSelection
+} from '@/app/selection-draft/transcript-selection'
 import { openStarMapNodeMenuFor } from '@/app/starmap/context-menu-handle'
 import { DROPDOWN_KIT } from '@/components/ui/actions-menu'
 import { Codicon } from '@/components/ui/codicon'
@@ -19,7 +25,9 @@ import {
 import { type Translations, useI18n } from '@/i18n'
 import { hostPathLabel, hudForcesNativeLinks, normalizeExternalUrl, openExternalLink } from '@/lib/external-link'
 import { formatCombo } from '@/lib/keybinds/combo'
+import { useKeybindHint } from '@/lib/keybinds/use-keybind-hint'
 import { isRemoteGateway } from '@/lib/media'
+import { isMacPlatform } from '@/lib/platform'
 import { reachablePreviewUrl } from '@/lib/preview-reach'
 import { openPreview } from '@/store/preview'
 
@@ -32,7 +40,7 @@ import {
   openDomContextMenu,
   openTerminalContextMenu
 } from './store'
-import { isWebUrl, resolveDomTarget } from './target'
+import { type ContextMenuDomTarget, isWebUrl, resolveDomTarget } from './target'
 
 /** Marks a surface that owns PLAIN right-clicks itself (the user-message
  *  reaction bubble). Owned targets inside it — links, images, editables,
@@ -120,7 +128,42 @@ function terminalSections(open: Extract<OpenContextMenu, { kind: 'terminal' }>, 
   ]
 }
 
-function domSections(open: Extract<OpenContextMenu, { kind: 'dom' }>, t: Translations): ReactNode[][] {
+/** Copy, plus — for text inside ONE user/assistant message — a new unsent
+ *  chat quoting it. The quote is the selection as it stood when the menu
+ *  opened, even if the highlight moves before the item is chosen. */
+function selectionSection(target: ContextMenuDomTarget, t: Translations, newChatHint: null | string): ReactNode[] {
+  const quoted = target.transcriptSelection
+
+  const copy = (
+    <Item
+      icon="copy"
+      key="selection-copy"
+      label={t.common.copy}
+      onSelect={() => void writeClipboardText(target.selectionText)}
+    />
+  )
+
+  if (quoted.kind !== 'message') {
+    return [copy]
+  }
+
+  return [
+    copy,
+    <Item
+      icon="comment-discussion"
+      key="selection-new-chat"
+      label={t.selectionDraft.contextMenuItem}
+      onSelect={() => void openTranscriptSelectionInNewDraft(quoted)}
+      shortcut={newChatHint ?? undefined}
+    />
+  ]
+}
+
+function domSections(
+  open: Extract<OpenContextMenu, { kind: 'dom' }>,
+  t: Translations,
+  newChatHint: null | string
+): ReactNode[][] {
   const copy = t.contextMenu
   const { spellcheck, target } = open
   const sections: ReactNode[][] = []
@@ -347,14 +390,7 @@ function domSections(open: Extract<OpenContextMenu, { kind: 'dom' }>, t: Transla
       />
     ])
   } else if (target.selectionText) {
-    sections.push([
-      <Item
-        icon="copy"
-        key="selection-copy"
-        label={t.common.copy}
-        onSelect={() => void writeClipboardText(target.selectionText)}
-      />
-    ])
+    sections.push(selectionSection(target, t, newChatHint))
   }
 
   return sections
@@ -543,8 +579,20 @@ function guestSections(open: Extract<OpenContextMenu, { kind: 'guest' }>, t: Tra
 export function AppContextMenu() {
   const { t } = useI18n()
   const open = useStore($contextMenu)
+  const newChatHint = useKeybindHint('session.newFromSelection')
 
   useEffect(() => {
+    // The transcript selection as it stood when the secondary press began —
+    // Chromium collapses it on the press when the click lands beside the
+    // highlight, before `contextmenu` arrives (see snapshotTranscriptSelection).
+    let pressSnapshot: null | SelectionSnapshot = null
+
+    const onPointerDown = (event: PointerEvent) => {
+      const secondary = event.button === 2 || (event.button === 0 && event.ctrlKey && isMacPlatform())
+
+      pressSnapshot = secondary ? snapshotTranscriptSelection() : null
+    }
+
     // stopPropagation beats other renderer handlers; preventDefault is never
     // called because Chromium emits the main-process context-menu event (the
     // spellcheck + image-coordinate source) only for unprevented gestures —
@@ -580,6 +628,11 @@ export function AppContextMenu() {
         return
       }
 
+      // A right-click in the message that held the selection answers for that
+      // selection, not for the collapsed caret the press left behind.
+      restoreSnapshotForClick(pressSnapshot, element)
+      pressSnapshot = null
+
       const target = resolveDomTarget(element)
       const selection = window.getSelection()
 
@@ -592,7 +645,13 @@ export function AppContextMenu() {
         )
       )
 
-      const owned = Boolean(target.linkUrl || target.onImage || target.editable || selected)
+      // Anywhere in the message that holds the selection counts as "on" it —
+      // its padding and action row included, not only the highlighted glyphs.
+      const inSelectedMessage =
+        target.transcriptSelection.kind === 'message' &&
+        Boolean(element && target.transcriptSelection.message.contains(element))
+
+      const owned = Boolean(target.linkUrl || target.onImage || target.editable || selected || inSelectedMessage)
 
       // A selection elsewhere in the same pane must not take its bare menu.
       if (!owned && trigger) {
@@ -609,9 +668,13 @@ export function AppContextMenu() {
       openDomContextMenu(event.clientX, event.clientY, target)
     }
 
+    window.addEventListener('pointerdown', onPointerDown, true)
     window.addEventListener('contextmenu', onContextMenu, true)
 
-    return () => window.removeEventListener('contextmenu', onContextMenu, true)
+    return () => {
+      window.removeEventListener('pointerdown', onPointerDown, true)
+      window.removeEventListener('contextmenu', onContextMenu, true)
+    }
   }, [])
 
   // Spell-check facts arrive from main after the menu opens (Chromium reports
@@ -627,7 +690,9 @@ export function AppContextMenu() {
       ? terminalSections(open, t)
       : open.kind === 'guest'
         ? guestSections(open, t)
-        : (list => (list.length ? list : [[<ShellMenuItems key="shell" kit={DROPDOWN_KIT} />]]))(domSections(open, t))
+        : (list => (list.length ? list : [[<ShellMenuItems key="shell" kit={DROPDOWN_KIT} />]]))(
+            domSections(open, t, newChatHint)
+          )
 
   return (
     <DropdownMenu

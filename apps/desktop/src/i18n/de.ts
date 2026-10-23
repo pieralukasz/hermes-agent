@@ -15,6 +15,7 @@ import { deNotifications } from './de_notifications'
 import { deOnboarding } from './de_onboarding'
 import { dePluginUpdate } from './de_plugin_update'
 import { deProjects } from './de_projects'
+import { deSelectionDraft } from './de_selection_draft'
 import { deSharedMetrics } from './de_shared_metrics'
 import { deThemePicker } from './de_theme_picker'
 import { deUpdateChannel } from './de_update_channel'
@@ -22,6 +23,7 @@ import { defineLocale, type TranslationOverrides } from './define-locale'
 import { introDe } from './intro-de'
 
 export const deOverrides = {
+  selectionDraft: deSelectionDraft,
   sharedMetrics: deSharedMetrics,
   firstRun: deFirstRun,
   intro: introDe,
@@ -570,6 +572,7 @@ export const deOverrides = {
       'session.new': 'Neue Session',
       'session.newTab': 'Neuer Session-Tab',
       'session.newWindow': 'Neues Fenster',
+      'session.newFromSelection': 'Neuer Chat aus ausgewähltem Text',
       'session.next': 'Nächste Session',
       'session.prev': 'Vorherige Session',
       'session.slot.1': 'Zu letzter Session 1 wechseln',

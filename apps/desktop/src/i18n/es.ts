@@ -16,12 +16,14 @@ import { esNotifications } from './es_notifications'
 import { esOnboarding } from './es_onboarding'
 import { esPluginUpdate } from './es_plugin_update'
 import { esProjects } from './es_projects'
+import { esSelectionDraft } from './es_selection_draft'
 import { esSharedMetrics } from './es_shared_metrics'
 import { esThemePicker } from './es_theme_picker'
 import { esUpdateChannel } from './es_update_channel'
 import { introEs } from './intro-es'
 
 export const esOverrides = {
+  selectionDraft: esSelectionDraft,
   sharedMetrics: esSharedMetrics,
   firstRun: esFirstRun,
   intro: introEs,
@@ -573,6 +575,7 @@ export const esOverrides = {
       'session.new': 'Nueva sesión',
       'session.newTab': 'Nueva pestaña de sesión',
       'session.newWindow': 'Nueva ventana',
+      'session.newFromSelection': 'Nuevo chat desde el texto seleccionado',
       'session.next': 'Siguiente sesión',
       'session.prev': 'Sesión anterior',
       'session.slot.1': 'Cambiar a la sesión reciente 1',
