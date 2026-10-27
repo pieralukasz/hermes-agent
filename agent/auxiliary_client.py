@@ -1926,7 +1926,7 @@ def _maybe_wrap_anthropic(
     if api_mode != "anthropic_messages" and (api_mode or not _endpoint_speaks_anthropic_messages(base_url)):
         return client_obj
     try:
-        from agent.anthropic_adapter import build_anthropic_client
+        from agent.anthropic_adapter import anthropic_route_is_oauth, build_anthropic_client
     except ImportError:
         logger.warning(
             "Endpoint %s speaks Anthropic Messages but the anthropic SDK is "
@@ -1947,7 +1947,7 @@ def _maybe_wrap_anthropic(
         "(model=%s, base_url=%s, api_mode=%s)",
         model, base_url[:60] if base_url else "", api_mode or "auto-detected",
     )
-    return AnthropicAuxiliaryClient(real_client, model, api_key, base_url, is_oauth=False)
+    return AnthropicAuxiliaryClient(real_client, model, api_key, base_url, is_oauth=anthropic_route_is_oauth(base_url, api_key))
 
 
 def _read_nous_auth() -> Optional[dict]:
